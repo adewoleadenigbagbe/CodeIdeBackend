@@ -134,6 +134,7 @@
     <Compile Include="Models\TestRequest.cs" />
     <Compile Include="Models\TestCache.cs" />
     <Compile Include="Models\TestResult.cs" />
+    <Compile Include="Models\UnitTestCode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

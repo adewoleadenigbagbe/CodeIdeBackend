@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 
 namespace CodeIdeBackend.Models
 {
-    public static class TestCache
+    public static class TestResultHelper
     {
-        public static Dictionary<Guid, Dictionary<string, List<TestResult>>> Cache = new Dictionary<Guid, Dictionary<string, List<TestResult>>>(); 
+        public static ConcurrentDictionary<Guid, Dictionary<string, string>> TestCache = new ConcurrentDictionary<Guid, Dictionary<string, string>>();
     }
 }

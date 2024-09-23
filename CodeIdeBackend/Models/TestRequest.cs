@@ -25,8 +25,14 @@ namespace CodeIdeBackend.Models
 
     public class Handler
     {
-        public TestResponse Handle(TestRequest request)
+        public string Handle(TestRequest request)
         {
+            //check cache 
+            if (TestResultHelper.TestCache.TryGetValue(request.UserId, out var userTestResults) && (userTestResults?.TryGetValue(request.Code, out var response) ?? false))
+            {
+                return response;
+            }
+
             var provider = CodeDomProvider.CreateProvider("CSharp");
             var loParameters = new CompilerParameters();
 
@@ -76,24 +82,40 @@ namespace CodeIdeBackend.Models
                 throw new Exception(lcErrorMsg);
             }
 
-            var process = new Process();
-            var startInfo = new ProcessStartInfo();
-            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            startInfo.FileName = "cmd.exe";
+            string output = string.Empty;
+            using (var process = new Process())
+            {
+                var startInfo = new ProcessStartInfo();
+                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
-            //this going to be the unit test argument
-            startInfo.Arguments = "";
+                startInfo.FileName = "vstest.console";
 
-            process.Start();
+                //this going to be the unit test argument
+                startInfo.Arguments = testCompiled.CompiledAssembly.GetName().Name;
 
-            process.WaitForExit();
+                process.Start();
+
+                process.WaitForExit();
+
+                output = process.StandardOutput.ReadToEnd();
+            }
 
             // Read the output of the process.
-            string output = process.StandardOutput.ReadToEnd();
-
             Console.WriteLine(output);
 
-            return new TestResponse();
+            if (TestResultHelper.TestCache.ContainsKey(request.UserId))
+            {
+                var testResults = TestResultHelper.TestCache[request.UserId];
+                testResults.Add(request.Code, output);
+            }
+            else
+            {
+                TestResultHelper.TestCache[request.UserId] = new Dictionary<string, string>
+                {
+                    [request.Code] = output
+                };
+            }
+            return output;
         }
     }
 }

@@ -19,6 +19,8 @@ namespace CodeIdeBackend.Controllers
             request = request ?? new TestRequest();
 
             request.Code = @"
+using System;
+using System.Linq;
 namespace LearningCSharpConcept
 {
     public class FizzBuzz

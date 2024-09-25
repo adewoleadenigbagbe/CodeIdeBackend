@@ -35,81 +35,67 @@ namespace CodeIdeBackend.Models
             }
 
             var provider = CodeDomProvider.CreateProvider("CSharp");
-            var loParameters = new CompilerParameters();
 
+            var loParameters = new CompilerParameters();
             //Add reference library
             loParameters.ReferencedAssemblies.Add("System.dll");
             loParameters.ReferencedAssemblies.Add("System.Linq.dll");
+            loParameters.ReferencedAssemblies.Add(typeof(Assert).Assembly.Location);
 
             //Load the result assembly into memory
-            loParameters.GenerateInMemory = true;
+            //loParameters.GenerateInMemory = true;
 
-            //compile the code
-            var userCodeCompiled = provider.CompileAssemblyFromSource(loParameters, request.Code);
-
-            if(userCodeCompiled.Errors.HasErrors)
+            //compile the user code
+            var compilerResults = provider.CompileAssemblyFromSource(loParameters, request.Code, UnitTestCode.TestCode);
+            if (compilerResults.Errors.HasErrors)
             {
                 string lcErrorMsg = "";
 
-                lcErrorMsg = userCodeCompiled.Errors.Count.ToString() + " Errors:";
-                for (int x = 0; x < userCodeCompiled.Errors.Count; x++)
+                lcErrorMsg = compilerResults.Errors.Count.ToString() + " Errors:";
+                for (int x = 0; x < compilerResults.Errors.Count; x++)
                 {
-                    lcErrorMsg = lcErrorMsg + "\r\nLine: " + userCodeCompiled.Errors[x].Line.ToString() + " - " +
-                                userCodeCompiled.Errors[x].ErrorText;
+                    lcErrorMsg = lcErrorMsg + "\r\nLine: " + compilerResults.Errors[x].Line.ToString() + " - " +
+                                compilerResults.Errors[x].ErrorText;
                 }
                 throw new Exception(lcErrorMsg);
             }
 
-
-            //Add reference library
-            var loParameters2 = new CompilerParameters();
-
-            //Add reference library
-            loParameters2.ReferencedAssemblies.Add("System.dll");
-            loParameters2.ReferencedAssemblies.Add("System.Linq.dll");
-            loParameters2.ReferencedAssemblies.Add(typeof(Assert).Assembly.Location);
-            loParameters2.ReferencedAssemblies.Add(userCodeCompiled.CompiledAssembly.GetName().Name);
-            loParameters2.GenerateInMemory = true;
-
-
-            var pp = loParameters2.ReferencedAssemblies;
-
-            var testCompiled = provider.CompileAssemblyFromSource(loParameters2, UnitTestCode.TestCode);
-
-
-            if (testCompiled.Errors.HasErrors)
+            string output = "";
+            string error = "";
+            var processInfo = new ProcessStartInfo
             {
-                string lcErrorMsg = "";
+                WindowStyle = ProcessWindowStyle.Maximized,
+                FileName = "vstest.console.exe",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                Arguments = compilerResults.CompiledAssembly.Location
+            };
 
-                lcErrorMsg = testCompiled.Errors.Count.ToString() + " Errors:";
-                for (int x = 0; x < testCompiled.Errors.Count; x++)
-                {
-                    lcErrorMsg = lcErrorMsg + "\r\nLine: " + testCompiled.Errors[x].Line.ToString() + " - " +
-                                testCompiled.Errors[x].ErrorText;
-                }
-                throw new Exception(lcErrorMsg);
-            }
-
-            string output = string.Empty;
             using (var process = new Process())
             {
-                var startInfo = new ProcessStartInfo();
-                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-
-                startInfo.FileName = "vstest.console";
-
-                //this going to be the unit test argument
-                startInfo.Arguments = testCompiled.CompiledAssembly.GetName().Name;
+                process.StartInfo = processInfo;
 
                 process.Start();
-
                 process.WaitForExit();
 
-                output = process.StandardOutput.ReadToEnd();
+                while (!process.StandardOutput.EndOfStream)
+                {
+                    var line = process.StandardOutput.ReadLine();
+                    output += line;
+                }
+
+                while (!process.StandardError.EndOfStream)
+                {
+                    var line = process.StandardError.ReadLine();
+                    error += line;
+                }
+
             }
 
             // Read the output of the process.
             Console.WriteLine(output);
+            Console.WriteLine(error);
 
             if (TestResultHelper.TestCache.ContainsKey(request.UserId))
             {

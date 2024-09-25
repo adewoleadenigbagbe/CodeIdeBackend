@@ -8,12 +8,18 @@ namespace CodeIdeBackend.Models
     public class UnitTestCode
     {
         public const string TestCode = @"
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using LearningCSharpConcept;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 namespace LearningCSharpConcept.Tests
 {
     [TestClass()]
     public class FizzBuzzTests
     {
-
         [TestMethod()]
         public void FizzBuzz_GetOutput_Method_Returns_Fizz_When_Number_Is_Divisible_By_Only_3()
         {

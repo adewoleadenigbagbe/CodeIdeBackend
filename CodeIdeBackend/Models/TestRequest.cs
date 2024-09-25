@@ -1,4 +1,5 @@
 ﻿using Microsoft.CSharp;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
@@ -38,6 +39,7 @@ namespace CodeIdeBackend.Models
 
             //Add reference library
             loParameters.ReferencedAssemblies.Add("System.dll");
+            loParameters.ReferencedAssemblies.Add("System.Linq.dll");
 
             //Load the result assembly into memory
             loParameters.GenerateInMemory = true;
@@ -64,8 +66,14 @@ namespace CodeIdeBackend.Models
 
             //Add reference library
             loParameters2.ReferencedAssemblies.Add("System.dll");
-
+            loParameters2.ReferencedAssemblies.Add("System.Linq.dll");
+            loParameters2.ReferencedAssemblies.Add(typeof(Assert).Assembly.Location);
+            loParameters2.ReferencedAssemblies.Add(userCodeCompiled.CompiledAssembly.GetName().Name);
             loParameters2.GenerateInMemory = true;
+
+
+            var pp = loParameters2.ReferencedAssemblies;
+
             var testCompiled = provider.CompileAssemblyFromSource(loParameters2, UnitTestCode.TestCode);
 
 
